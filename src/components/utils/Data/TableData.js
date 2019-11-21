@@ -28,87 +28,75 @@ import DataTypeCheck from "./DataTypeCheck";
 import moment from "moment";
 
 export default class TableData {
-  constructor(dataSet, selectedColumns = 0) {
+  constructor(dataSet, rowFilters = {}, columnSelect = {}) {
     this.dataSet = dataSet;
-    this.selectedColumns = selectedColumns;
+    this.rowFilters = rowFilters;
+    this.columnSelect = columnSelect;
   }
 
   /**
-   * Returns separate the primitive and object types for table
-   * @param {array} data data to check
-   * @return an object of arrays, useable and unuseable data for table
+   * Returns an array of filtered data based on the input params
    */
-  _dataCheck(data) {
-    //usable and unusable(object) data for table
-    let result = {
-      useable: [],
-      unuseable: []
-    };
-    let prim = {};
-    if (Array.isArray(data)) {
-      data.map(item => {
-        const entries = Object.entries(item);
-        for (const [entry, value] of entries) {
-          let type = new DataTypeCheck(value);
-          let { convertible, to } = type.isStringConvertible();
-          if (type.isNull() || type.isUndefined()) {
-            console.log(typeof value);
-          }
-          if (convertible && to === "Date") {
-            prim = { ...prim, [entry]: moment(value).format("DD-MM-YYYY HH:mm") };
-          }
-          if (type.isPrimitive() && !(convertible && to === "Date")) {
-            prim = { ...prim, [entry]: value };
-          } else {
-            result.unuseable.push(item[entry]);
-          }
-        }
+  getFilteredData() {
+    //filter column keys
+    //filter data
+    //filter search
+    const data = this.dataSet;
+    const keys = Object.keys(this.dataSet[0].data);
 
-        result.useable.push(prim);
-      });
-    } else {
-      console.log(data);
-      console.log(typeof data);
-    }
-
-    return result;
-  }
-
-  /**
-   * Create table data based on the selected columns
-   */
-  _createTableData() {
-    const data = this._dataCheck(this.dataSet);
-    const columns = this.selectedColumns;
-    let result = {
-      tableData: [],
-      unusable: data.unuseable
-    };
-    data.useable.map(item => {
-      const entries = Object.entries(item);
-      let returnObject = {};
-
-      if (columns === 0 || (Array.isArray(columns) && columns.length === 0)) {
-        result.tableData.push(item);
-      } else {
-        for (let key of columns) {
-          if (entries[key - 1] !== undefined) {
-            const [entry, value] = entries[key - 1];
-            returnObject = { ...returnObject, [entry]: value };
-          }
-        }
-        result.push(returnObject);
+    const columnFilter = [];
+    keys.map(key => {
+      if (Object.entries(this.columnSelect).length === 0) {
+        columnFilter.push(key);
+      } else if (this.columnSelect[key]) {
+        columnFilter.push(key);
       }
     });
-
+    const columnFilteredData = [];
+    data.map(item => {
+      let returnObject = {};
+      let returnData = {};
+      Object.entries(item.data).map(entry => {
+        const [key, value] = entry;
+        if (columnFilter.includes(key)) returnData = { ...returnData, [key]: value };
+      });
+      returnObject = {
+        id: item.id,
+        data: returnData
+      };
+      columnFilteredData.push(returnObject);
+    });
+    const result = columnFilteredData.filter(item => {
+      const match = [];
+      for (const [tfEntry, tfValue] of Object.entries(this.rowFilters)) {
+        if (tfValue !== "") {
+          match.push(
+            item.data[tfEntry] === tfValue ||
+              item.data[tfEntry] === undefined ||
+              moment(item.data[tfEntry]).format("YYYY-MM-DD") === tfValue
+          );
+        }
+      }
+      return match.every(m => m === true);
+    });
     return result;
   }
-
+  /**
+   * Seperates data and id
+   */
+  _seperateData() {
+    const data = this.getFilteredData();
+    const result = [];
+    data.map(item => {
+      result.push(item.data);
+    });
+    return result;
+  }
   /**
    * Returns an array of headers
    */
   getHeaders() {
-    const { tableData: data } = this._createTableData();
+    const data = this._seperateData();
     const keys = Object.keys(data[0]);
     const headers = [];
     keys.map(key => {
@@ -121,7 +109,7 @@ export default class TableData {
    * Returns an array of keys
    */
   getKeys() {
-    const { tableData: data } = this._createTableData();
+    const data = this._seperateData();
     return Object.keys(data[0]);
   }
   /**
@@ -130,13 +118,12 @@ export default class TableData {
   getTableData() {
     const headers = this.getHeaders();
     const keys = this.getKeys();
-    const { tableData: data, unusable: unused } = this._createTableData();
+    const data = this.getFilteredData();
 
     const result = {
       headers,
       keys,
-      data,
-      unused
+      data
     };
 
     return result;
@@ -145,7 +132,7 @@ export default class TableData {
    * Returns an array of sets
    */
   getUniqueData() {
-    const { tableData: data } = this._createTableData();
+    const data = this._seperateData();
     const keys = this.getKeys();
 
     const result = [];
@@ -156,7 +143,7 @@ export default class TableData {
         const item = new DataTypeCheck(row[column]);
         const itemDate = moment(row[column]);
         if (!item.isNumber() && itemDate.isValid()) {
-          set.add(itemDate.format("DD-MM-YYYY"));
+          set.add(itemDate.format("YYYY-MM-DD"));
         } else {
           set.add(row[column]);
         }
@@ -179,6 +166,7 @@ export default class TableData {
   }
   /**
    * Returns an object of column keys and a boolean (true)
+   * For comlumn filtering
    */
   getColumns() {
     const keys = this.getKeys();
@@ -188,48 +176,5 @@ export default class TableData {
       obj = { ...obj, [key]: true };
     });
     return obj;
-  }
-  /**
-   * Returns an array of filtered data based on the input params
-   */
-  getFilteredData(rowFilters, columnSelect) {
-    //filter column keys
-    //filter data
-    //filter search
-    const { tableData: data } = this._createTableData();
-    const keys = this.getKeys();
-
-    const columnFilter = [];
-    keys.map(key => {
-      if (columnSelect[key]) {
-        columnFilter.push(key);
-      }
-    });
-
-    const columnFilteredData = [];
-    data.map(item => {
-      let returnObject = {};
-      Object.entries(item).map(entry => {
-        const [key, value] = entry;
-        if (columnFilter.includes(key)) returnObject = { ...returnObject, [key]: value };
-      });
-      columnFilteredData.push(returnObject);
-    });
-
-    const result = columnFilteredData.filter(item => {
-      const match = [];
-      for (const [tfEntry, tfValue] of Object.entries(rowFilters)) {
-        if (tfValue !== "") {
-          match.push(
-            item[tfEntry] === tfValue ||
-              item[tfEntry] === undefined ||
-              moment(item[tfEntry]).format("DD-MM-YYYY") === tfValue
-          );
-        }
-      }
-      return match.every(m => m === true);
-    });
-
-    return result;
   }
 }

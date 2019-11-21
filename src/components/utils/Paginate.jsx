@@ -14,18 +14,24 @@ export const rowsToShow = dataLength => {
   const minLeap = 5;
   const maxLeap = 50;
   const leap = 10;
-  const leapNum = Math.floor(dataLength / leap);
 
-  for (let i = 0; i < leapNum; i++) {
-    if (i * leap < minLeap) {
-      result.push(minLeap);
-    } else {
+  if (dataLength <= minLeap) {
+    result.push(dataLength);
+  } else if (dataLength <= maxLeap) {
+    result.push(minLeap);
+    result.push(dataLength);
+  } else {
+    result.push(minLeap);
+    result.push(maxLeap);
+  }
+  const leapNum = Math.floor(Math.max(...result) / leap);
+
+  for (let i = 1; i <= leapNum; i++) {
+    if (i * leap !== Math.max(...result)) {
       result.push(i * leap);
     }
   }
-  if (dataLength >= maxLeap) result.push(maxLeap);
-  else result.push(dataLength);
-
+  result.sort((a, b) => a - b);
   return result;
 };
 

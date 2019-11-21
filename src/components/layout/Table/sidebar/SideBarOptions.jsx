@@ -27,7 +27,20 @@ const SideBarOptions = props => {
               <FormControlLabel
                 key={key}
                 control={
-                  <Checkbox checked={columnSelect[key]} onChange={handleChange(key)} value={key} />
+                  Object.keys(columnSelect).length >= 1 ? (
+                    <Checkbox
+                      checked={columnSelect[key]}
+                      onChange={handleChange(key)}
+                      value={key}
+                    />
+                  ) : (
+                    <Checkbox
+                      disabled
+                      checked={columnSelect[key]}
+                      onChange={handleChange(key)}
+                      value={key}
+                    />
+                  )
                 }
                 label={key.charAt(0).toUpperCase() + key.slice(1)}
               />

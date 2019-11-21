@@ -1,7 +1,8 @@
 import React, { Component } from "react";
 
-import { getDataSet, deleteData, getDataKeys, doTest } from "../../utils/Database.utils";
-import TableData from "../../utils/Data/TableData";
+import sort from "../../utils/Sort";
+import InputForm from "../Form/InputForm";
+import EditForm from "../Form/EditForm";
 
 import Pagination from "./Pagination";
 import TableHeader from "./TableHeader";
@@ -13,7 +14,7 @@ import SideBarFilters from "./sidebar/SideBarFilters";
 import SideBarOptions from "./sidebar/SideBarOptions";
 
 import _ from "lodash";
-import CircularProgress from "@material-ui/core/CircularProgress";
+import TableData from "../../utils/Data/TableData";
 
 class Table extends Component {
   //table arguments from parent
@@ -24,12 +25,11 @@ class Table extends Component {
     data: [],
     dataName: "",
     headers: [],
+    ids: [],
     columnKeys: [],
     uniqueData: [],
-    isLoading: true,
     //table header
     sortedColumn: { path: "", order: "" }, //table sorted by which column
-    tableData: [],
     //paginating
     pageSize: 5, //set the page size
     currentPage: 1, //set the current page, default 1
@@ -38,54 +38,60 @@ class Table extends Component {
     tableFilters: {},
     //options
     sideBarOptionsOpen: false,
-    columnSelect: {}
+    columnSelect: {},
+    //add item
+    editFormOpen: false,
+    editFormData: {}
   };
 
   componentDidMount() {
-    const { link, sublink, dataName, selectedColumns } = this.props;
+    this.getDataSet();
 
-    // fetch data and update state
-    getDataSet(link, sublink).then(res => {
-      const data = new TableData(res.data, selectedColumns);
-      const tableData = data.getTableData();
-      const uniqueData = data.getUniqueData();
-      const filterKeys = data.getFilterKeys();
-      const columnFilters = data.getColumns();
-
-      this.setState({
-        data: tableData.data,
-        dataName,
-        headers: tableData.headers,
-        columnKeys: tableData.keys,
-        uniqueData,
-        isLoading: res.isLoading,
-        sortedColumn: { path: tableData.headers[0], order: "asc" },
-        tableData: tableData.data,
-        tableFilters: filterKeys,
-        columnSelect: columnFilters
-      });
-    });
-
-    console.log("Table - Mounted");
+    console.log("Table-MOUNTED");
   }
 
   componentDidUpdate(prevProps, prevState) {
-    console.log("Table_UPDATED");
+    console.log("Table-UPDATED");
     const { tableFilters, columnSelect } = this.state;
     const { tableFilters: prevFilters, columnSelect: prevSelect } = prevState;
+    const { data: prevPropsData } = prevProps;
+    if (this.props.data !== prevPropsData) {
+      this.getDataSet();
+    }
 
     if (prevFilters !== tableFilters || prevSelect !== columnSelect) {
-      console.log("Filters updated");
       this.handleFilters();
     }
   }
+  //set data
+  getDataSet = () => {
+    const { data, dataName } = this.props;
+    // get data and update state
+
+    const dataSet = new TableData(data);
+    const tableData = dataSet.getTableData();
+    const uniqueData = dataSet.getUniqueData();
+    const filterKeys = dataSet.getFilterKeys();
+    const columnFilters = dataSet.getColumns();
+
+    this.setState({
+      data: tableData.data,
+      dataName,
+      headers: tableData.headers,
+      ids: tableData.ids,
+      columnKeys: tableData.keys,
+      uniqueData,
+      sortedColumn: { path: tableData.keys[0], order: "asc" },
+      tableFilters: filterKeys,
+      columnSelect: columnFilters
+    });
+  };
 
   handleSort = sortedColumn => {
     this.setState({ sortedColumn });
   };
 
   handlePageChange = page => {
-    console.log(page);
     this.setState({ currentPage: page });
   };
 
@@ -107,12 +113,13 @@ class Table extends Component {
     }
   };
   handleSearch = e => {
-    const data = this.state.data;
+    e.preventDefault();
+    const data = this.props.data;
 
     const input = e.target.value;
     const result = data.filter(item => {
       const includes = [];
-      Object.values(item).map(value => {
+      Object.values(item.data).map(value => {
         {
           includes.push(
             String(value)
@@ -123,7 +130,7 @@ class Table extends Component {
       });
       return includes.find(i => i === true);
     });
-    this.setState({ tableData: result });
+    this.setState({ data: result });
   };
 
   handleFilterChange = event => {
@@ -137,11 +144,11 @@ class Table extends Component {
     const result = data.filter(item => {
       const match = [];
       for (const [tfEntry, tfValue] of Object.entries(filters)) {
-        if (tfValue !== "") match.push(item[tfEntry] === tfValue);
+        if (tfValue !== "") match.push(item.data[tfEntry] === tfValue);
       }
       return match.every(m => m === true);
     });
-
+    console.log(filters);
     this.setState({
       tableFilters: filters
     });
@@ -155,40 +162,32 @@ class Table extends Component {
   };
 
   handleFilters = () => {
-    const { selectedColumns } = this.props;
-    const { data, tableFilters, columnSelect } = this.state;
+    const { data } = this.props;
+    const { tableFilters, columnSelect } = this.state;
     //an array of id numbers
-
-    const filterData = new TableData(data, selectedColumns);
-    const result = filterData.getFilteredData(tableFilters, columnSelect);
-
-    const newData = new TableData(result, selectedColumns);
-
-    const tableData = newData.getTableData();
-    const uniqueData = newData.getUniqueData();
-
+    const filteredData = new TableData(data, tableFilters, columnSelect);
+    const tableData = filteredData.getTableData();
+    const uniqueData = filteredData.getUniqueData();
     this.setState({
+      data: tableData.data,
       headers: tableData.headers,
       columnKeys: tableData.keys,
       uniqueData,
-      sortedColumn: { path: tableData.headers[0], order: "asc" },
-      tableData: tableData.data
+      sortedColumn: { path: tableData.keys[0], order: "asc" }
     });
   };
 
   resetTable = () => {
-    const { selectedColumns } = this.props;
-    const { data } = this.state;
+    const { data } = this.props;
     //an array of id numbers
 
-    const resetData = new TableData(data, selectedColumns);
-    const tableData = resetData.getTableData();
-    const uniqueData = resetData.getUniqueData();
-    const filterKeys = resetData.getFilterKeys();
-    const columnFilters = resetData.getColumns();
+    const tableData = data.getTableData();
+    const uniqueData = data.getUniqueData();
+    const filterKeys = data.getFilterKeys();
+    const columnFilters = data.getColumns();
 
     this.setState({
-      tableData: tableData.data,
+      data: tableData.data,
       headers: tableData.headers,
       columnKeys: tableData.keys,
       uniqueData,
@@ -197,47 +196,46 @@ class Table extends Component {
       columnSelect: columnFilters
     });
   };
+  handleEditClose = () => {
+    this.setState({ editFormOpen: false, editFormData: {} });
+  };
+
+  handleEdit = data => {
+    const dataSet = this.props.data;
+    this.setState({ editFormOpen: true });
+
+    dataSet.map(item => {
+      if (item.id === data) {
+        this.setState({ editFormData: { data: item.data, id: item.id } });
+      }
+    });
+  };
 
   render() {
     const {
       data,
       dataName,
       headers,
+      ids,
       columnKeys,
       uniqueData,
-      isLoading,
       sortedColumn,
-      tableData,
       pageSize,
       currentPage,
       sideBarFiltersOpen,
       tableFilters,
       sideBarOptionsOpen,
-      columnSelect
+      columnSelect,
+      editFormOpen,
+      editFormData
     } = this.state;
-
-    const count = tableData.length;
+    const { schema, handleSave, handleDelete, handleEditItem } = this.props;
+    const count = data.length;
     //filter first
-
-    const sorted = _.orderBy(tableData, [sortedColumn.path], [sortedColumn.order]);
+    const sorted = sort(data, sortedColumn.path, sortedColumn.order);
     const dataPage = paginate(sorted, currentPage, pageSize);
 
-    if (isLoading)
-      return (
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100vh"
-          }}
-        >
-          <CircularProgress />
-        </div>
-      );
-    if (data.length === 0) return <p>There are no {dataName} in the database} </p>;
     return (
-      //<p>Done</p>
       <div>
         <TableNav
           resetTable={this.resetTable}
@@ -268,8 +266,29 @@ class Table extends Component {
             sortedColumn={sortedColumn}
             onSort={this.handleSort}
           />
-          <TableBody columns={columnKeys} data={dataPage} />
+          <TableBody
+            columns={columnKeys}
+            data={dataPage}
+            ids={ids}
+            handleDelete={handleDelete}
+            handleEdit={this.handleEdit}
+          />
         </table>
+        <InputForm
+          keys={columnKeys}
+          headers={headers}
+          dataName={dataName}
+          schema={schema}
+          saveData={handleSave}
+        />
+        <EditForm
+          dataName={dataName}
+          schema={schema}
+          open={editFormOpen}
+          data={editFormData}
+          handleEditClose={this.handleEditClose}
+          handleEditItem={handleEditItem}
+        />
         <Pagination
           itemsCount={count}
           pageSize={pageSize}

@@ -1,6 +1,7 @@
 // checks the data type of input
 
 import moment from "moment";
+import upcast from "upcast";
 
 export default class DataTypeCheck {
   constructor(data) {
@@ -63,9 +64,8 @@ export default class DataTypeCheck {
     }
   }
 
-  isValidDate(str) {
+  isValidDate(str, format) {
     let date = moment(str);
-    const format = "YYYY-MM-DDTHH:mm:ss.SSSSZ";
     if (date.isValid() && date._f === format) return true;
     return false;
   }
@@ -84,6 +84,24 @@ export default class DataTypeCheck {
         convertible: true,
         to: "Date"
       };
+    return result;
+  }
+
+  convertData(name, schema) {
+    const value = this.data;
+    let result = "";
+    Object.keys(schema).map(key => {
+      //console.log(key);
+      if (key === "date" && this.isValidDate(value, schema[key].formatIn)) {
+        result = moment(value).format(schema[key].formatOut);
+      } else if (key === name) {
+        if (upcast.is(value, schema[key].type)) result = value;
+        else {
+          result = upcast.to(value, schema[key].type);
+        }
+      }
+    });
+
     return result;
   }
 }

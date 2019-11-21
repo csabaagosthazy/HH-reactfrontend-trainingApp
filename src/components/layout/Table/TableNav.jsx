@@ -37,7 +37,7 @@ const TableNav = props => {
             Reset
           </Button>
         </Box>
-        <Box p={1}>
+        <Box>
           <TextField
             id="standard-basic"
             className={classes.textField}
