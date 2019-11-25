@@ -2,8 +2,6 @@ import React from "react";
 import { Link } from "react-router-dom";
 
 import navStyles from "../../styles/NavStyle";
-import SignedIn from "../SignedIn";
-import SignedOut from "../SignedOut";
 
 import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
@@ -49,13 +47,13 @@ export default function NavBar() {
               open={Boolean(anchorEl)}
               onClose={handleClose}
             >
-              <MenuItem>
+              <MenuItem onClick={handleClose}>
                 <Link to="/customers">Customers</Link>
               </MenuItem>
-              <MenuItem>
+              <MenuItem onClick={handleClose}>
                 <Link to="/trainings">Trainings</Link>
               </MenuItem>
-              <MenuItem>
+              <MenuItem onClick={handleClose}>
                 <Link to="/">Home</Link>
               </MenuItem>
             </Menu>

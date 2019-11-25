@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React from "react";
 import Form from "./Form";
 
 import Button from "@material-ui/core/Button";
@@ -15,28 +15,35 @@ class InputForm extends Form {
     joiSchema: {},
     errors: {},
     isErrorAtField: {},
-    open: false,
     saveButtonDisabled: true,
     selectValue: "Select...."
   };
 
   componentDidMount() {
     console.log("Form-Mounted");
+    const { schema } = this.props;
+    this.createJoiSchema(schema);
+    this.createDefaultData(schema);
   }
 
   componentDidUpdate(prevProps, prevState) {
     const { errors } = this.state;
     const { errors: prevErrors } = prevState;
+    const { data: prevData } = prevProps;
+    const { data, schema } = this.props;
 
     if (prevErrors !== errors) {
       console.log("FORM-UPDATED");
       this.validate();
     }
-    const { keys, headers, schema } = this.props;
-    const { keys: prevKeys } = prevProps;
-    if (prevKeys !== keys) {
-      console.log("FORM-UPDATED");
-      this.createJoiSchema(schema);
+    if (prevData !== data) {
+      if (Object.entries(data).length === 0) {
+        this.createDefaultData(schema);
+      } else {
+        let dataObj = { ...this.state.data };
+        dataObj = { ...dataObj, ...data };
+        this.setState({ data: dataObj });
+      }
     }
   }
 
@@ -50,26 +57,28 @@ class InputForm extends Form {
     });
     this.setState({ joiSchema });
   };
+  createDefaultData = schema => {
+    let data = {};
+    Object.keys(schema).map((key, i) => {
+      data = {
+        ...data,
+        [key]: ""
+      };
+    });
+    this.setState({ data });
+  };
 
   doSubmit = () => {
     this.props.saveData(this.state.data);
-    this.handleClose();
+    this.props.handleVisible();
   };
 
   render() {
-    const { open, saveButtonDisabled } = this.state;
-    const { dataName, schema } = this.props;
+    const { saveButtonDisabled } = this.state;
+    const { dataName, schema, open, handleVisible } = this.props;
     return (
       <div style={{ margin: 10 }}>
-        <Button
-          style={{ float: "right", margin: "2em" }}
-          variant="contained"
-          color="primary"
-          onClick={this.handleOpen}
-        >
-          Add new
-        </Button>
-        <Dialog open={open} onClose={this.handleClose} aria-labelledby="form-dialog-title">
+        <Dialog open={open} onClose={handleVisible} aria-labelledby="form-dialog-title">
           <DialogTitle id="form-dialog-title">{dataName}</DialogTitle>
           <DialogContent>
             <DialogContentText>Fill information here</DialogContentText>
@@ -84,7 +93,7 @@ class InputForm extends Form {
             )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={this.handleClose} color="secondary">
+            <Button onClick={handleVisible} color="secondary">
               Cancel
             </Button>
             <Button disabled={saveButtonDisabled} onClick={this.handleSubmit} color="primary">

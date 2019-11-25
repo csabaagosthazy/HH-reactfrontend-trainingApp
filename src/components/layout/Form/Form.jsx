@@ -3,24 +3,16 @@ import Joi from "joi-browser";
 
 import TextField from "@material-ui/core/TextField";
 import MenuItem from "@material-ui/core/MenuItem";
+import moment from "moment";
 
 class Form extends Component {
   //gets keys,headers, open from props
   state = {
-    data: {},
     joiSchema: {},
     errors: {},
     isErrorAtField: {},
-    open: false,
-    saveButtonDisabled: true
-  };
-
-  handleOpen = () => {
-    this.setState({ open: true });
-  };
-
-  handleClose = () => {
-    this.setState({ open: false });
+    saveButtonDisabled: true,
+    selectValue: ""
   };
 
   validate = () => {
@@ -67,7 +59,7 @@ class Form extends Component {
     if (errorMessage) errors[input.name] = errorMessage;
     else delete errors[input.name];
 
-    const data = { ...this.state.data };
+    let data = { ...this.state.data };
     data[input.name] = input.value;
 
     this.setState({ data, errors });

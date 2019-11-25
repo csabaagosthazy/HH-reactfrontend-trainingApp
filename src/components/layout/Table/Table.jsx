@@ -13,8 +13,9 @@ import { paginate } from "../../utils/Paginate";
 import SideBarFilters from "./sidebar/SideBarFilters";
 import SideBarOptions from "./sidebar/SideBarOptions";
 
-import _ from "lodash";
 import TableData from "../../utils/Data/TableData";
+
+import Button from "@material-ui/core/Button";
 
 class Table extends Component {
   //table arguments from parent
@@ -40,6 +41,8 @@ class Table extends Component {
     sideBarOptionsOpen: false,
     columnSelect: {},
     //add item
+    addFormOpen: false,
+    //edit item
     editFormOpen: false,
     editFormData: {}
   };
@@ -119,15 +122,13 @@ class Table extends Component {
     const input = e.target.value;
     const result = data.filter(item => {
       const includes = [];
-      Object.values(item.data).map(value => {
-        {
-          includes.push(
-            String(value)
-              .toLocaleLowerCase()
-              .includes(input.toLocaleLowerCase())
-          );
-        }
-      });
+      Object.values(item.data).map(value =>
+        includes.push(
+          String(value)
+            .toLocaleLowerCase()
+            .includes(input.toLocaleLowerCase())
+        )
+      );
       return includes.find(i => i === true);
     });
     this.setState({ data: result });
@@ -141,7 +142,7 @@ class Table extends Component {
     const { name, value } = event.target;
     const filters = { ...tableFilters, [name]: value };
 
-    const result = data.filter(item => {
+    data.filter(item => {
       const match = [];
       for (const [tfEntry, tfValue] of Object.entries(filters)) {
         if (tfValue !== "") match.push(item.data[tfEntry] === tfValue);
@@ -206,9 +207,14 @@ class Table extends Component {
 
     dataSet.map(item => {
       if (item.id === data) {
+        console.log(item);
         this.setState({ editFormData: { data: item.data, id: item.id } });
       }
     });
+  };
+  handleAddFormVisible = () => {
+    const { addFormOpen } = this.state;
+    this.setState({ addFormOpen: !addFormOpen });
   };
 
   render() {
@@ -226,6 +232,7 @@ class Table extends Component {
       tableFilters,
       sideBarOptionsOpen,
       columnSelect,
+      addFormOpen,
       editFormOpen,
       editFormData
     } = this.state;
@@ -274,12 +281,20 @@ class Table extends Component {
             handleEdit={this.handleEdit}
           />
         </table>
+        <Button
+          style={{ float: "right", margin: "2em" }}
+          variant="contained"
+          color="primary"
+          onClick={this.handleAddFormVisible}
+        >
+          Add new
+        </Button>
         <InputForm
-          keys={columnKeys}
-          headers={headers}
           dataName={dataName}
           schema={schema}
+          open={addFormOpen}
           saveData={handleSave}
+          handleVisible={this.handleAddFormVisible}
         />
         <EditForm
           dataName={dataName}

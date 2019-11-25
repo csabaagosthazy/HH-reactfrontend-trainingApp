@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React from "react";
 import Form from "./Form";
 
 import moment from "moment";
@@ -48,7 +48,7 @@ class EditForm extends Form {
     Object.entries(data).map(entry => {
       const [key, value] = entry;
       if (key === "date") {
-        obj = { ...obj, [key]: moment(value).format("YYYY-MM-DD") };
+        obj = { ...obj, [key]: moment(value).format("YYYY-MM-DDTHH:MM") };
       } else {
         obj = { ...obj, [key]: value };
       }
@@ -70,11 +70,10 @@ class EditForm extends Form {
   doSubmit = () => {
     this.props.handleEditItem(this.state.dataId, this.state.data);
     this.props.handleEditClose();
-    console.log(this.state);
   };
 
   render() {
-    const { saveButtonDisabled, data } = this.state;
+    const { saveButtonDisabled } = this.state;
     const { dataName, schema, open, handleEditClose } = this.props;
     return (
       <div style={{ margin: 10 }}>

@@ -1,5 +1,3 @@
-import _ from "lodash";
-
 export const sort = (data, path, order) => {
   const result = [];
   const simpleData = [];

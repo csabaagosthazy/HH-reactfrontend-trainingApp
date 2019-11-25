@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import signUpStyles from "../styles/SignupStyle";
 
 import Avatar from "@material-ui/core/Avatar";
@@ -28,13 +28,13 @@ function Copyright() {
 }
 
 export default function SignIn() {
-  const [email, setEmail] = useState("");
+  /*  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [streetAdd, setStreetAdd] = useState("");
   const [postCode, setPostCode] = useState("");
-  const [city, setCity] = useState("");
+  const [city, setCity] = useState(""); */
 
   const classes = signUpStyles();
 

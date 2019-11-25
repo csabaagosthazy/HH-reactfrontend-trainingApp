@@ -69,6 +69,7 @@ export const postData = async (link, data) => {
 
 export const updateData = async (link, data) => {
   const jString = JSON.stringify(data);
+  console.log(data);
   let result;
   await fetch(link, {
     method: "PUT",

@@ -32,7 +32,6 @@
 */
 
 import DataTypeCheck from "./DataTypeCheck";
-import moment from "moment";
 import Joi from "joi-browser";
 
 export default class CustomersData {

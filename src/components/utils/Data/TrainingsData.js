@@ -29,8 +29,6 @@
 */
 
 import DataTypeCheck from "./DataTypeCheck";
-import { getData } from "../Database.utils";
-import moment from "moment";
 import Joi from "joi-browser";
 
 export default class TrainingData {
@@ -41,7 +39,7 @@ export default class TrainingData {
     this.selectedColumns = selectedColumns;
     this.schema = {
       date: {
-        type: "date",
+        type: "datetime-local",
         header: "Date",
         select: false,
         joi: Joi.date()

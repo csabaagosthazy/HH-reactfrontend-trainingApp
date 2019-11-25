@@ -42,7 +42,7 @@ class TableBody extends Component {
   };
   render() {
     const { data, columns, handleDelete, handleEdit } = this.props;
-    const { id, style, hiddenTd } = this.state;
+    const { id, style } = this.state;
 
     return (
       <tbody>

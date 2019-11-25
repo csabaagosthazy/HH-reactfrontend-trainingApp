@@ -1,12 +1,24 @@
 import React, { Component } from "react";
+import moment from "moment";
 import Table from "../layout/Table/Table";
 import { getDataSet, postData, deleteData, updateData } from "../utils/Database.utils";
 import TrainingsData from "../utils/Data/TrainingsData";
+import Schedule from "../layout/Schedule/Schedule";
+import ScheduleData from "../utils/Data/ScheduleData";
 
 import CircularProgress from "@material-ui/core/CircularProgress";
 import Snackbar from "@material-ui/core/Snackbar";
 
+import Nav from "react-bootstrap/Nav";
+import TabContainer from "react-bootstrap/TabContainer";
+import TabContent from "react-bootstrap/TabContent";
+import TabPane from "react-bootstrap/TabPane";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import ScrollArea from "react-scrollbar";
+
 class Trainings extends Component {
+  _isMounted = false;
   state = {
     selectedColumns: [], // select visible columns (column numbers)
     dataName: "Trainings",
@@ -24,78 +36,70 @@ class Trainings extends Component {
     message: ""
   };
 
-  async componentDidMount() {
+  componentDidMount() {
+    this._isMounted = true;
     // fetch data and update state
     console.log("Trainings-mounted");
-    const { trainingsLink, customersLink, trainingsCustomersLink, sublink } = this.state;
-    await getDataSet(trainingsLink, sublink).then(res => {
-      this.setState({
-        trainingsData: res.data,
-        trainingIsLoading: res.isLoading
-      });
-    });
-    await getDataSet(customersLink, sublink).then(res => {
-      console.log(res.data);
-      this.setState({
-        customersData: res.data,
-        customerIsLoading: res.isLoading
-      });
-    });
-    await getDataSet(trainingsCustomersLink).then(res => {
-      console.log(res.data);
-      this.setState({
-        trainingsCustomersData: res.data,
-        trainingsCustomersisLoading: res.isLoading
-      });
-    });
+    this.fetchDataSet();
+  }
+  componentWillUnmount() {
+    this._isMounted = false;
   }
   //database functions
   fetchDataSet = async () => {
-    const { trainingsLink, customersLink, trainingsCustomersLink, sublink, dataName } = this.state;
-    // fetch data and update state
-    await getDataSet(trainingsLink, sublink).then(res => {
-      console.log(res.data);
-      this.setState({
-        trainingsData: res.data,
-        dataName,
-        trainingIsLoading: res.isLoading
+    if (this._isMounted) {
+      const { trainingsLink, customersLink, trainingsCustomersLink, sublink } = this.state;
+      // fetch data and update state
+      await getDataSet(trainingsLink, sublink).then(res => {
+        if (this._isMounted) {
+          this.setState({
+            trainingsData: res.data,
+            trainingIsLoading: res.isLoading
+          });
+        }
       });
-    });
-    await getDataSet(customersLink, sublink).then(res => {
-      console.log(res.data);
-      this.setState({
-        customersData: res.data,
-        customerIsLoading: res.isLoading
+      await getDataSet(customersLink, sublink).then(res => {
+        if (this._isMounted) {
+          this.setState({
+            customersData: res.data,
+            customerIsLoading: res.isLoading
+          });
+        }
       });
-    });
-    await getDataSet(trainingsCustomersLink).then(res => {
-      console.log(res.data);
-      this.setState({
-        trainingsCustomersData: res.data,
-        trainingsCustomersisLoading: res.isLoading
+      await getDataSet(trainingsCustomersLink).then(res => {
+        if (this._isMounted) {
+          this.setState({
+            trainingsCustomersData: res.data,
+            trainingsCustomersisLoading: res.isLoading
+          });
+        }
       });
-    });
+    }
   };
 
   saveData = async ({ activity, customer: id, date, duration }) => {
     const { trainingsLink } = this.state;
     const saveObj = {
       activity,
-      date,
+      date: moment(date).format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
       duration,
       customer: `${this.state.customersLink}/${id}`
     };
     await postData(trainingsLink, saveObj).then(res => {
       if (res.status === 201) {
-        this.setState({
-          snackBarOpen: true,
-          message: `${activity} at ${date} saved successfully`
-        });
+        if (this._isMounted) {
+          this.setState({
+            snackBarOpen: true,
+            message: `${activity} at ${date} saved successfully`
+          });
+        }
       } else {
-        this.setState({
-          snackBarOpen: true,
-          message: `${activity} at ${date} couldn't be saved`
-        });
+        if (this._isMounted) {
+          this.setState({
+            snackBarOpen: true,
+            message: `${activity} at ${date} couldn't be saved`
+          });
+        }
       }
     });
     this.fetchDataSet();
@@ -106,15 +110,19 @@ class Trainings extends Component {
       const deleteLink = `${this.state.trainingsLink}/${id}`;
       await deleteData(deleteLink).then(res => {
         if (res.status === 204) {
-          this.setState({
-            snackBarOpen: true,
-            message: `Training deleted`
-          });
+          if (this._isMounted) {
+            this.setState({
+              snackBarOpen: true,
+              message: `Training deleted`
+            });
+          }
         } else {
-          this.setState({
-            snackBarOpen: true,
-            message: `Training couldn't be deleted`
-          });
+          if (this._isMounted) {
+            this.setState({
+              snackBarOpen: true,
+              message: `Training couldn't be deleted`
+            });
+          }
         }
       });
       this.fetchDataSet();
@@ -124,21 +132,25 @@ class Trainings extends Component {
     const link = `${this.state.trainingsLink}/${trainingId}`;
     const data = {
       activity,
-      date,
+      date: moment(date).format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
       duration,
       customer: `${this.state.customersLink}/${customerId}`
     };
     await updateData(link, data).then(res => {
       if (res.status === 200) {
-        this.setState({
-          snackBarOpen: true,
-          message: `${activity} at ${date} modified successfully`
-        });
+        if (this._isMounted) {
+          this.setState({
+            snackBarOpen: true,
+            message: `${activity} at ${date} modified successfully`
+          });
+        }
       } else {
-        this.setState({
-          snackBarOpen: true,
-          message: `${activity} at ${date} couldn't be modified`
-        });
+        if (this._isMounted) {
+          this.setState({
+            snackBarOpen: true,
+            message: `${activity} at ${date} couldn't be modified`
+          });
+        }
       }
     });
     this.fetchDataSet();
@@ -160,7 +172,7 @@ class Trainings extends Component {
       snackBarOpen,
       message
     } = this.state;
-    let table, tableData, dataSchema;
+    let table, tableData, dataSchema, schedule, scheduleData;
     if (!trainingIsLoading && !customerIsLoading && !trainingsCustomersisLoading) {
       table = new TrainingsData(
         trainingsData,
@@ -171,6 +183,9 @@ class Trainings extends Component {
 
       tableData = table.getTableData();
       dataSchema = table.getSchema();
+
+      schedule = new ScheduleData(trainingsCustomersData);
+      scheduleData = schedule.createData();
     }
     if (trainingIsLoading || customerIsLoading || trainingsCustomersisLoading) {
       return (
@@ -189,15 +204,48 @@ class Trainings extends Component {
     if (trainingsData.length === 0) return <p>There are no {dataName} in the database} </p>;
 
     return (
-      <div>
-        <Table
-          data={tableData}
-          schema={dataSchema}
-          dataName={dataName}
-          handleSave={this.saveData}
-          handleDelete={this.deleteItem}
-          handleEditItem={this.editItem}
-        />
+      <div style={{ margin: "10px" }}>
+        <ScrollArea>
+          <TabContainer id="left-tabs-example" defaultActiveKey="first">
+            <Row>
+              <Col sm={2}>
+                <Nav variant="pills" className="flex-column">
+                  <Nav.Item>
+                    <Nav.Link eventKey="first">Trainings</Nav.Link>
+                  </Nav.Item>
+                  <Nav.Item>
+                    <Nav.Link eventKey="second">Schedule</Nav.Link>
+                  </Nav.Item>
+                </Nav>
+              </Col>
+              <Col sm={10}>
+                <TabContent>
+                  <TabPane eventKey="first">
+                    <Table
+                      data={tableData}
+                      schema={dataSchema}
+                      dataName={dataName}
+                      handleSave={this.saveData}
+                      handleDelete={this.deleteItem}
+                      handleEditItem={this.editItem}
+                    />
+                  </TabPane>
+                  <TabPane eventKey="second">
+                    <Schedule
+                      data={scheduleData}
+                      dataName={dataName}
+                      schema={dataSchema}
+                      trainingsData={trainingsCustomersData}
+                      editItem={this.editItem}
+                      saveItem={this.saveData}
+                      deleteItem={this.deleteItem}
+                    />
+                  </TabPane>
+                </TabContent>
+              </Col>
+            </Row>
+          </TabContainer>
+        </ScrollArea>
         <Snackbar
           open={snackBarOpen}
           autoHideDuration={3000}

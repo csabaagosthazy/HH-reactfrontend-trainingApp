@@ -91,8 +91,8 @@ export default class DataTypeCheck {
     const value = this.data;
     let result = "";
     Object.keys(schema).map(key => {
-      //console.log(key);
-      if (key === "date" && this.isValidDate(value, schema[key].formatIn)) {
+      if (key === "date") {
+        console.log(key, key === "date");
         result = moment(value).format(schema[key].formatOut);
       } else if (key === name) {
         if (upcast.is(value, schema[key].type)) result = value;
